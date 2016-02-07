@@ -27,17 +27,17 @@ class SingleCom:public Command{
         pid_t pid;
         int status;
         if((pid=fork())<0){
-            printf("ERROR: Forking child process failure\n");
-            exit(1);
+            perror("ERROR: Forking child process failure\n");
+            //exit(1);
         }
         else if(pid==0){
             if(execvp(*tokens,token)<0){
-                printf("ERROR:Execution failure\n");
-                exit(1);
+                perror("ERROR:Execution failure\n");
+                //exit(1);
             }
         }
         else{
-            while
+            while(
 
 
 class MultiCom{
