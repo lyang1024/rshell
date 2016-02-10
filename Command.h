@@ -1,3 +1,5 @@
+#ifndef sshell_Command_h
+#define sshell_Command_h
 #include<stdio.h>
 #include<sys/types.h>
 #include<sys/wait.h>
@@ -9,45 +11,46 @@
 using namespace std;
 
 class Command{
-
-    protected:
+    
+protected:
     char cmd[1000];
-
-    public:
+    
+public:
     virtual void parse() = 0;
     virtual int execute() = 0;
     virtual void clear() = 0;
     void setCmd(string s){
-        strncpy(cmd, s.c_str(), sizeof(cmd));
-        cmd[sizeof(cmd)-1] = 0;
-        printf("command class created 22");
+        strcpy(cmd, s.c_str());
+        printf("%s",cmd);
     }
 };
 
 class SingleCom: public Command{
-    private:
+private:
     char *tokens[64];
-
-    public:
-
+    
+public:
+    
     void clear(){
         memset(tokens,0,sizeof(tokens));
         memset(cmd,0,sizeof(cmd));
     }
-
+    
     //parse command into tokens
     void parse(){
+        int count=0;
         if (strcmp(cmd,"exit") == 0) exit(0);
         printf("parse single command 35");
-        *tokens = strtok(cmd," ");
-        while (tokens != NULL)
+        char *token = strtok(cmd," ");
+        while (token != NULL)
         {
-            ++*tokens;
-            *tokens = strtok(NULL," ");
+            tokens[count] = token;
+            token = strtok(NULL," ");
+            count++;
         }
+        tokens[count] = 0;
         return;
     }
-
     //execute this command
     int execute()
     {
@@ -60,7 +63,7 @@ class SingleCom: public Command{
             //exit(1);
         }
         else if (pid == 0){
-            if (execvp(*tokens,tokens) < 0){
+            if (execvp(tokens[0],tokens) < 0){
                 perror("ERROR:Execution failure\n");
                 return 0;
                 //exit(1);
@@ -80,26 +83,26 @@ class SingleCom: public Command{
 
 
 class MultiCom: public Command{
-    private:
+private:
     vector<SingleCom> coms;
     vector<string> connectors;
-
-    public:
-
+    
+public:
+    
     void clear(){
         coms.clear();
         connectors.clear();
     }
-
+    
     void parse(){
         printf("parse multicommand 83");
         if (strcmp(cmd,"exit") == 0) exit(0);
+        
         char* tmp;
         tmp = strchr(cmd,'#');
         if (tmp != NULL)
             strncpy(cmd,cmd,tmp-cmd);
-        *tmp = 0;
-
+        
         char* tcom;
         tcom = strtok(cmd,"|&;");
         while (tcom != NULL){
@@ -109,8 +112,7 @@ class MultiCom: public Command{
             coms.push_back(sc);
             tcom = strtok(NULL,"|&;");
         }
-        *tcom = 0;
-
+        
         //remove spaces
         //create a duplicate of cmd?
         //char* c1 = cmd;
@@ -121,7 +123,7 @@ class MultiCom: public Command{
         //    c1++;
         //}
         //*c2 = 0;
-
+        
         //find connectors
         printf("finding connectors");
         string scmd(cmd);
@@ -143,6 +145,7 @@ class MultiCom: public Command{
                 if(*it =='&'){
                     string t = "&&";
                     connectors.push_back(t);
+                    
                 }
                 else{
                     printf("Wrong input format!");
@@ -155,21 +158,24 @@ class MultiCom: public Command{
             }
         }
     }
-
+    
     int execute()
     {
         printf("executing muticommand 149");
         int result;
-        for(unsigned int i = 0;i < connectors.size();++i){
-            result = coms[i].execute();
-            if (connectors[i] == ";");
-            else if (connectors[i] == "||" && result == 1)
+        result = coms[0].execute();
+        for(unsigned int i = 1;i < connectors.size();++i){
+            if (connectors[i-1] == ";");
+            else if (connectors[i-1] == "||" && result == 1)
                 return 1;
-            else if (connectors[i] == "&&" && result == 0)
-                return 1;
+            else if (connectors[i-1] == "&&" && result == 0)
+                return 0;
+            result=coms[i].execute();
         }
         return 1;
     }
 };
 
+
+#endif
 
