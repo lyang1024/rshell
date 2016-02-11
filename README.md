@@ -28,5 +28,9 @@ Open a terminal and run the following commands.
 
 ##Limitations and Bugs
 
-1. some wrong input format may cause logic error and wrong output.
-2. 
+1. Using connectors without arguments in between(e.g. &&&&) will cause segmentation fault.
+2. Running commands that have character(s) which is(are) also included in connectors will not be recognized and cause an error.
+3. Colors for files, directories, etc. are not supported.
+4. Right and left arrow cannot move cursor when inputting commands.
+5. Up and down arrow cannot get previous commands. 
+
