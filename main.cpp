@@ -21,17 +21,14 @@ int main()
     string input;
     while(true){
         line.clear();
-        prompt();
-        getline(cin,input);
-//        if (input=="exit")
-//            break;
+        prompt();                // Print prompt
+        getline(cin,input);         // Read command line
         char *tmps;
-        tmps=new char[sizeof(input)];
-        strcpy(tmps, input.c_str());
-        
-        line.setCmd(tmps);
-        line.parse();
-        line.execute();
+        tmps=new char[sizeof(input)]; 
+        strcpy(tmps, input.c_str()); 
+        line.setCmd(tmps);          // Put command line into line
+        line.parse();            // Parse the command line
+        line.execute();       // Execute the command line with connectors
         
     }
     return 0;

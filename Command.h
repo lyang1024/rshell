@@ -17,7 +17,7 @@
 #include<string>
 #include<stdlib.h>
 using namespace std;
-
+/* Base class */
 class Command{
     
 public:
@@ -27,6 +27,7 @@ public:
     virtual void setCmd(char *s) = 0;
 };
 
+/* Single command class*/
 class SingleCom: public Command{
 protected:
     char cmd[100];
@@ -39,17 +40,18 @@ public:
         memset(tokens,0,sizeof(tokens));
         memset(cmd,0,sizeof(cmd));
     }
+   /* put the single command into SingleCom class*/
     void setCmd(char *s){
         strcpy(cmd, s);
     }
     
-    //parse command into tokens
+    //parse single command into tokens
     void parse(){
         int count=0;
         char *token = strtok(cmd," ");
         while (token != NULL)
         {
-            tokens[count]=new char[strlen(token)];// Some memory problem...
+            tokens[count]=new char[strlen(token)];
             strcpy(tokens[count],token);
             token = strtok(NULL," ");
             count++;
@@ -59,25 +61,22 @@ public:
         token=NULL;
         return;
     }
-    //execute this command
+    //execute the single command
     int execute()
     {
         pid_t pid;
-        flag=1;
+        flag=1;      // identify that the command execute successfully(=1) or not(=0)
         int status;
         if((strcmp(tokens[0],"exit") == 0)&&(tokens[1] == 0)) exit(0);
         if((pid = fork()) < 0){
             perror("ERROR: Forking child process failure\n");
             return 0;
-            //exit(1);
         }
         else if (pid == 0){
-            // Need to use pipe() to transfer the value of flag from child to parent
             execvp(tokens[0],tokens);
             perror("ERROR:Execution failure\n");
             flag=0;
             return 0;
-            //exit(0);
         }
         else{
             while (wait(&status) != pid);
@@ -86,12 +85,12 @@ public:
     }
 };
 
-
+/* Multi-command class with connectors */
 class MultiCom: public Command{
 private:
-    vector<SingleCom> coms;
-    vector<string> connectors;
-    char cmdl[1000];
+    vector<SingleCom> coms;   // Store every single command tokenized by "||", "&&", ";"
+    vector<string> connectors; // Store every connector corresponding to each single command 
+    char cmdl[1000];   // Store the multi-command line;
     
 public:
     
@@ -100,11 +99,13 @@ public:
         coms.clear();
         connectors.clear();
     }
+
     void setCmd(char *s){
         strcpy(cmdl, s);
     }
+// Tokenize the multi-command line into single commmands by connectors "||", "&&" and ";"
     void parse(){
-        
+        // Delete the comment from command line 
         char* tmp;
         tmp = strchr(cmdl,'#');
         char *cmdll;
@@ -116,6 +117,7 @@ public:
             cmdll=new char[strlen(cmdl)];
             strcpy(cmdll,cmdl);
         }
+	// Tokenize the command line into single commands sequentially
         char *tcom;
         char* tcmdl;
         tcmdl=new char[strlen(cmdll)];
@@ -128,16 +130,18 @@ public:
             coms.push_back(sc);
             tcom = strtok(NULL,"|&;");
         }
+        // Parse each single command
         for (unsigned int i=0; i<coms.size();i++)
         {
             coms[i].parse();
         }
         
-        //find connectors
+        //Find all the  connectors and store in the connectors vector sequentially
         string scmd(cmdll);
         string::iterator it;
         for (it = scmd.begin();it != scmd.end();it++){
-            if (*it == '|'){
+           // Identify connector "||" 
+	   if (*it == '|'){
                 ++it;
                 if(*it == '|'){
                     string t = "||";
@@ -148,6 +152,7 @@ public:
                     return;
                 }
             }
+	   // Identify connector "&&"
             else if (*it == '&'){
                 ++it;
                 if(*it =='&'){
@@ -160,16 +165,18 @@ public:
                     return;
                 }
             }
+            // Identify connector ";"
             else if (*it == ';'){
                 string t = ";";
                 connectors.push_back(t);
             }
         }
     }
-    
+    /* Execute the command according to the connectors. 
+  Each single command follows a connector except the first one.*/
     int execute()
     {
-        int result=1;
+        int result=1;    // Store the status of the execution of a single command  0=fail, 1=succeed 
         result = coms[0].execute();
         unsigned int i=0;
         while(i < connectors.size()){
