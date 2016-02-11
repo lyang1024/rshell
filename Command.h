@@ -41,14 +41,11 @@ public:
     }
     void setCmd(char *s){
         strcpy(cmd, s);
-        // printf("%s",cmd);
     }
     
     //parse command into tokens
     void parse(){
         int count=0;
-        if (strcmp(cmd,"exit") == 0) exit(0);
-        //printf("parse single command 35");
         char *token = strtok(cmd," ");
         while (token != NULL)
         {
@@ -65,10 +62,10 @@ public:
     //execute this command
     int execute()
     {
-        // printf("execute single command 48");
         pid_t pid;
         flag=1;
         int status;
+        if((strcmp(tokens[0],"exit") == 0)&&(tokens[1] == 0)) exit(0);
         if((pid = fork()) < 0){
             perror("ERROR: Forking child process failure\n");
             return 0;
@@ -105,11 +102,8 @@ public:
     }
     void setCmd(char *s){
         strcpy(cmdl, s);
-        // printf("%s",cmd);
     }
     void parse(){
-        // printf("parse multicommand 83");
-        if (strcmp(cmdl,"exit") == 0) exit(0);
         
         char* tmp;
         tmp = strchr(cmdl,'#');
@@ -134,24 +128,12 @@ public:
             coms.push_back(sc);
             tcom = strtok(NULL,"|&;");
         }
-        for (int i=0; i<coms.size();i++)
+        for (unsigned int i=0; i<coms.size();i++)
         {
             coms[i].parse();
         }
         
-        //remove spaces
-        //create a duplicate of cmd?
-        //char* c1 = cmd;
-        //char* c2 = cmd;
-        //while (*c1){
-        //    if (*c1 != ' ')
-        //        *c2++ = *c1;
-        //    c1++;
-        //}
-        //*c2 = 0;
-        
         //find connectors
-        //printf("finding connectors");
         string scmd(cmdll);
         string::iterator it;
         for (it = scmd.begin();it != scmd.end();it++){
@@ -162,7 +144,7 @@ public:
                     connectors.push_back(t);
                 }
                 else{
-                    printf("Wrong input format!");
+                    printf("Wrong input format!\n");
                     return;
                 }
             }
@@ -174,7 +156,7 @@ public:
                     
                 }
                 else{
-                    printf("Wrong input format!");
+                    printf("Wrong input format!\n");
                     return;
                 }
             }
@@ -187,10 +169,9 @@ public:
     
     int execute()
     {
-        //ehprintf("executing muticommand 149");
         int result=1;
         result = coms[0].execute();
-        int i=0;
+        unsigned int i=0;
         while(i < connectors.size()){
             if (connectors[i] == "||" && result == 1){
                 i++;
