@@ -1,3 +1,11 @@
+//
+//  Command.h
+//  sshell
+//
+//  Created by 0.0 on 2/9/16.
+//  Copyright (c) 2016 0.0. All rights reserved.
+//
+
 #ifndef sshell_Command_h
 #define sshell_Command_h
 #include<stdio.h>
@@ -12,22 +20,18 @@ using namespace std;
 
 class Command{
     
-protected:
-    char cmd[1000];
-    
 public:
     virtual void parse() = 0;
     virtual int execute() = 0;
     virtual void clear() = 0;
-    void setCmd(string s){
-        strcpy(cmd, s.c_str());
-        printf("%s",cmd);
-    }
+    virtual void setCmd(char *s) = 0;
 };
 
 class SingleCom: public Command{
-private:
+protected:
+    char cmd[100];
     char *tokens[64];
+    int flag;
     
 public:
     
@@ -35,27 +39,35 @@ public:
         memset(tokens,0,sizeof(tokens));
         memset(cmd,0,sizeof(cmd));
     }
+    void setCmd(char *s){
+        strcpy(cmd, s);
+        // printf("%s",cmd);
+    }
     
     //parse command into tokens
     void parse(){
         int count=0;
         if (strcmp(cmd,"exit") == 0) exit(0);
-        printf("parse single command 35");
+        //printf("parse single command 35");
         char *token = strtok(cmd," ");
         while (token != NULL)
         {
-            tokens[count] = token;
+            tokens[count]=new char[strlen(token)];// Some memory problem...
+            strcpy(tokens[count],token);
             token = strtok(NULL," ");
             count++;
         }
-        tokens[count] = 0;
+        tokens[count] =0;
+        delete[] token;
+        token=NULL;
         return;
     }
     //execute this command
     int execute()
     {
-        printf("execute single command 48");
+        // printf("execute single command 48");
         pid_t pid;
+        flag=1;
         int status;
         if((pid = fork()) < 0){
             perror("ERROR: Forking child process failure\n");
@@ -63,21 +75,17 @@ public:
             //exit(1);
         }
         else if (pid == 0){
-            if (execvp(tokens[0],tokens) < 0){
-                perror("ERROR:Execution failure\n");
-                return 0;
-                //exit(1);
-            }
+            // Need to use pipe() to transfer the value of flag from child to parent
+            execvp(tokens[0],tokens);
+            perror("ERROR:Execution failure\n");
+            flag=0;
+            return 0;
+            //exit(0);
         }
         else{
-            while (waitpid(-1,&status,0)!=pid){
-                if (waitpid(-1,&status,0)==-1){
-                    perror("ERROR: Child process failure\n");
-                    return 0;
-                }
-            }
+            while (wait(&status) != pid);
         }
-        return 1;
+        return flag;
     }
 };
 
@@ -86,31 +94,49 @@ class MultiCom: public Command{
 private:
     vector<SingleCom> coms;
     vector<string> connectors;
+    char cmdl[1000];
     
 public:
     
     void clear(){
+        memset(cmdl, 0, sizeof(cmdl));
         coms.clear();
         connectors.clear();
     }
-    
+    void setCmd(char *s){
+        strcpy(cmdl, s);
+        // printf("%s",cmd);
+    }
     void parse(){
-        printf("parse multicommand 83");
-        if (strcmp(cmd,"exit") == 0) exit(0);
+        // printf("parse multicommand 83");
+        if (strcmp(cmdl,"exit") == 0) exit(0);
         
         char* tmp;
-        tmp = strchr(cmd,'#');
-        if (tmp != NULL)
-            strncpy(cmd,cmd,tmp-cmd);
-        
-        char* tcom;
-        tcom = strtok(cmd,"|&;");
+        tmp = strchr(cmdl,'#');
+        char *cmdll;
+        if (tmp != NULL){
+            cmdll=new char[strlen(cmdl)-strlen(tmp)];
+            strncpy(cmdll,cmdl,strlen(cmdl)-strlen(tmp));
+        }
+        else{
+            cmdll=new char[strlen(cmdl)];
+            strcpy(cmdll,cmdl);
+        }
+        char *tcom;
+        char* tcmdl;
+        tcmdl=new char[strlen(cmdll)];
+        strcpy(tcmdl, cmdll);
+        tcom = strtok(tcmdl,"|&;");
         while (tcom != NULL){
             SingleCom sc;
+            sc.clear();
             sc.setCmd(tcom);
-            sc.parse();
             coms.push_back(sc);
             tcom = strtok(NULL,"|&;");
+        }
+        for (int i=0; i<coms.size();i++)
+        {
+            coms[i].parse();
         }
         
         //remove spaces
@@ -125,8 +151,8 @@ public:
         //*c2 = 0;
         
         //find connectors
-        printf("finding connectors");
-        string scmd(cmd);
+        //printf("finding connectors");
+        string scmd(cmdll);
         string::iterator it;
         for (it = scmd.begin();it != scmd.end();it++){
             if (*it == '|'){
@@ -161,16 +187,22 @@ public:
     
     int execute()
     {
-        printf("executing muticommand 149");
-        int result;
+        //ehprintf("executing muticommand 149");
+        int result=1;
         result = coms[0].execute();
-        for(unsigned int i = 1;i < connectors.size();++i){
-            if (connectors[i-1] == ";");
-            else if (connectors[i-1] == "||" && result == 1)
-                return 1;
-            else if (connectors[i-1] == "&&" && result == 0)
-                return 0;
-            result=coms[i].execute();
+        int i=0;
+        while(i < connectors.size()){
+            if (connectors[i] == "||" && result == 1){
+                i++;
+            }
+            else if (connectors[i] == "&&" && result == 0){
+                i++;
+            }
+            else{
+                i++;
+                result=1;
+                result=coms[i].execute();
+            }
         }
         return 1;
     }
@@ -178,4 +210,3 @@ public:
 
 
 #endif
-

@@ -1,3 +1,4 @@
+
 #include "Command.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -13,13 +14,16 @@ int main()
         line.clear();
         cout<<"$";
         getline(cin,input);
-        if (input == "exit")
+        if (input=="exit")
             break;
-        line.setCmd(input);
+        char *tmps;
+        tmps=new char[sizeof(input)];
+        strcpy(tmps, input.c_str());
+        
+        line.setCmd(tmps);
         line.parse();
         line.execute();
-
+        
     }
     return 0;
 }
-
