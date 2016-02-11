@@ -19,12 +19,12 @@ int main()
 {
     MultiCom line;
     string input;
-    while(true){
+    while (true) {
         line.clear();
         prompt();                // Print prompt
         getline(cin,input);         // Read command line
         char *tmps;
-        tmps=new char[sizeof(input)]; 
+        tmps = new char[sizeof(input)]; 
         strcpy(tmps, input.c_str()); 
         line.setCmd(tmps);          // Put command line into line
         line.parse();            // Parse the command line
