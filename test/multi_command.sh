@@ -18,5 +18,5 @@ ls -a && fail command || pwd
 echo "Test command 9 : fail command && ls -a || pwd"
 fail command && ls -a || pwd
 echo "Test command 10 :cal;echo hello&&mkdir test||echo world;git status"
-cal;echo hello&&mkdir test||echo world;git status
+cal;echo hello&&mkdir testdirectory||echo world;git status
  
