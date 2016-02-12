@@ -28,11 +28,16 @@ Open a terminal and run the following commands.
 
 ##Error Message
 
-When an error occur, rshell will return an error message using perror. 
+When a command fails, rshell will return an error message using perror and continue the rest of commands. 
 
 ##Testing Method
 
-1. Write all test cases of one 
+1. Include test cases of different type of commands in seperate bash file.
+2. All test files are in the "test" directory.
+3. Run "bin/rshell" first then test the bash files. E.g. Type in "./test/single_command.sh" after starting rshell to test commands included in this file.
+4. Special case: the bash file "exit.sh" needs to be run outside rshell environment. E.g. "./test/exit.sh" 
+
+Example
 
 ##Limitations and Bugs
 
@@ -41,4 +46,4 @@ When an error occur, rshell will return an error message using perror.
 3. Colors for files, directories, etc. are not supported.
 4. Right and left arrow cannot move cursor when inputting commands.
 5. Up and down arrow cannot get previous commands. 
-
+6. If the string after echo includes connectors, an execution fault will occur. 
