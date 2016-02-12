@@ -48,7 +48,7 @@ public:
             token = strtok(NULL, " ");
             count++;
         }
-        tokens[count] =0;
+        tokens[count] = 0;
         delete[] token;
         token = NULL;
         return;
@@ -58,9 +58,9 @@ public:
         pid_t pid;
         flag = 1;      // identify that the command execute successfully(=1) or not(=0)
         int status;
-        
+
 	// If single command is "exit" then exit 
-        if((strcmp(tokens[0], "exit") == 0) && (tokens[1] == 0)) exit(0);
+        if ((strcmp(tokens[0], "exit") == 0) && (tokens[1] == 0)) exit(0);
         
 	// Execute the single command
 	if ((pid = fork()) < 0) {
