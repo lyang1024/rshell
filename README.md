@@ -26,6 +26,14 @@ Open a terminal and run the following commands.
 4. Execute rshell
 'bin/rshell'
 
+##Error Message
+
+When an error occur, rshell will return an error message using perror. 
+
+##Testing Method
+
+1. Write all test cases of one 
+
 ##Limitations and Bugs
 
 1. Using connectors without arguments in between(e.g. &&&&) will cause segmentation fault.
