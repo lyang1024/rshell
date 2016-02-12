@@ -1,7 +1,6 @@
-#!/bin/n/rshell
-echo "Testing command 1 : exit"
-exit
-echo "Testing command 2 : ls -a && exit && cal"
-ls -a && exit && calsh
-echo "Testing command 3: exit fake && exit; cal"
-exit fake && exit; cal
+echo "Test command 1 : exit"
+bin/rshell < exitcmd
+echo "Test command 2 : ls -a && exit && cal"
+bin/rshell < exitcmd1
+echo "Test command 3 : exit fake && exit; cal && exit"
+bin/rshell < exitcmd2
