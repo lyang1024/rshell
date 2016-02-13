@@ -16,19 +16,21 @@ void prompt()
 
 int main()
 {
-    MultiCom line;
-    string input;
     while (true) {
-        line.clear();
+        MultiCom line;
+        string input;
+        int eflag;
         prompt();                // Print prompt
         getline(cin,input);         // Read command line
+        if (input == "") continue;
         char *tmps;
         tmps = new char[sizeof(input)]; 
         strcpy(tmps, input.c_str()); 
         line.setCmd(tmps);          // Put command line into line
         line.parse();            // Parse the command line
-        line.execute();       // Execute the command line with connectors
-        
+        eflag = line.execute();       // Execute the command line with connectors
+        if (eflag == -1) break;
+        line.clear();
     }
     return 0;
 }

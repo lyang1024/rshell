@@ -8,6 +8,7 @@
 #include<vector>
 #include<string>
 #include<stdlib.h>
+#include<iostream>
 using namespace std;
 
 /* Base class */
@@ -26,9 +27,9 @@ protected:
     char cmd[100];
     char *tokens[64];
     int flag;
+    int count;
     
 public:
-    
     void clear() {
         memset(tokens, 0, sizeof(tokens));
         memset(cmd, 0, sizeof(cmd));
@@ -38,9 +39,14 @@ public:
         strcpy(cmd, s);
     }
     
+//    void print() {
+//        for (unsigned int j = 0;tokens[j] != 0;++j) {
+//            printf("%s\n",tokens[j]);
+//        }
+//    }
     //parse single command into tokens
     void parse() {
-        int count = 0;
+        count = 0;
         char *token = strtok(cmd, " ");
         while (token != NULL) {
             tokens[count] = new char[strlen(token)];
@@ -56,27 +62,33 @@ public:
     //execute the single command
     int execute() {
         pid_t pid;
-        flag = 1;      // identify that the command execute successfully(=1) or not(=0)
+//        flag = 1;      // identify that the command execute successfully(=1) or not(=0)
         int status;
+        char stre[10];
+        strcpy(stre, "exit");
 
-	// If single command is "exit" then exit 
-        if ((strcmp(tokens[0], "exit") == 0) && (tokens[1] == 0)) exit(0);
+	    // If single command is "exit" then exit 
+        if ((strcmp(tokens[0], stre) == 0 && count == 1)) return -1;
         
-	// Execute the single command
-	if ((pid = fork()) < 0) {
+	    // Execute the single command
+	    if ((pid = fork()) < 0) {
             perror("ERROR: Forking child process failure\n");
+            exit(EXIT_FAILURE);
+            while (wait(&status) != pid);
             return 0;
         }
         else if (pid == 0) {
             execvp(tokens[0], tokens);
             perror("ERROR:Execution failure\n");
-            flag = 0;
+            exit(EXIT_FAILURE);
+            while (wait(&status) != pid);
             return 0;
         }
         else {
             while (wait(&status) != pid);
+            return 1;
         }
-        return flag;
+//        return flag;
     }
 };
 
@@ -118,6 +130,7 @@ public:
         tcmdl = new char[strlen(cmdll)];
         strcpy(tcmdl, cmdll);
         tcom = strtok(tcmdl, "|&;");
+//        cout<<"size of comms:"<<coms.size()<<endl;
         while (tcom != NULL) {
             SingleCom sc;
             sc.clear();
@@ -128,6 +141,7 @@ public:
         // Parse each single command
         for (unsigned int i=0; i<coms.size(); i++) {
             coms[i].parse();
+//            coms[i].print();
         }
         
         //Find all the  connectors and store in the connectors vector sequentially
@@ -169,9 +183,12 @@ public:
     /* Execute the command according to the connectors. 
   Each single command follows a connector except the first one.*/
     int execute() {
-        int result = 1;    // Store the status of the execution of a single command  0 = fail, 1 = succeed 
+        int result = 1;    // Store the status of the execution of a single command  0 = fail, 1 = succeed -1 = exit
         result = coms[0].execute();
+//        cout<<"result of command 0:"<<result<<endl;
+        if (result == -1) exit(0);
         unsigned int i = 0;
+//        cout<<"connectors.size()"<<connectors.size()<<endl;
         while (i < connectors.size()) {
             if (connectors[i] == "||" && result == 1) {
                 i++;
@@ -183,8 +200,11 @@ public:
                 i++;
                 result = 1;
                 result = coms[i].execute();
+//                cout<<"result of command "<<i<<":"<<result<<endl;
             }
+            if (result == -1) break;
         }
+        if (result == -1) return -1;
         return 1;
     }
 };
