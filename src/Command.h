@@ -69,23 +69,41 @@ public:
 
 	    // If single command is "exit" then exit 
         if ((strcmp(tokens[0], stre) == 0 && count == 1)) return -1;
-        
+
+        //create pipe
+        int fd[2];
+        int result;
+        int readbuffer;
+        int message = 1;
+        result = pipe(fd);       
+        if (result < 0) {
+            perror("ERROR: Pipe error\n");
+            return 0;
+        }
+
 	    // Execute the single command
-	    if ((pid = fork()) < 0) {
+        pid = fork();
+
+	    if (pid < 0) {
             perror("ERROR: Forking child process failure\n");
-            exit(EXIT_FAILURE);
-            while (wait(&status) != pid);
+            //exit(EXIT_FAILURE);
             return 0;
         }
         else if (pid == 0) {
             execvp(tokens[0], tokens);
             perror("ERROR:Execution failure\n");
+            //close the input side of pipe and send execution message
+            close(fd[0]);
+            message = 0;
+            write(fd[1], &message, sizeof(message));
             exit(EXIT_FAILURE);
-            while (wait(&status) != pid);
-            return 0;
         }
         else {
+            //close output side of pipe and read in a string
+            close(fd[1]);
             while (wait(&status) != pid);
+            read(fd[0], &readbuffer, sizeof(readbuffer));
+            if (readbuffer == 0) return 0;
             return 1;
         }
 //        return flag;
@@ -183,13 +201,13 @@ public:
     /* Execute the command according to the connectors. 
   Each single command follows a connector except the first one.*/
     int execute() {
-        int result = 1;    // Store the status of the execution of a single command  0 = fail, 1 = succeed -1 = exit
+        int result;    // Store the status of the execution of a single command  0 = fail, 1 = succeed -1 = exit
         result = coms[0].execute();
 //        cout<<"result of command 0:"<<result<<endl;
         if (result == -1) exit(0);
         unsigned int i = 0;
 //        cout<<"connectors.size()"<<connectors.size()<<endl;
-        while (i < connectors.size()) {
+        while (i < connectors.size()&&result!=-1) {
             if (connectors[i] == "||" && result == 1) {
                 i++;
             }
@@ -197,8 +215,8 @@ public:
                 i++;
             }
             else {
-                i++;
-                result = 1;
+                ++i;
+//                result = 1;
                 result = coms[i].execute();
 //                cout<<"result of command "<<i<<":"<<result<<endl;
             }
