@@ -68,8 +68,38 @@ public:
         strcpy(stre, "exit");
 
 	    // If single command is "exit" then exit 
-        if ((strcmp(tokens[0], stre) == 0 && count == 1)) return -1;
-
+        if (strcmp(tokens[0], stre) == 0 && count == 1) return -1;
+		// for test commmand
+        int flag=0;
+		if ((strcmp(tokens[0],"test") == 0 || strcmp(tokens[0], "[") == 0) {
+				if (strcmp(tokens[3], "]" ) != 0)
+					return 0;
+				struct stat sb;
+				if (stat(tokens[2], &sb) == -1) {
+					perror("stat");
+					return 0;
+				}
+				if ((sb.st_mode & S_IFMT) == S_IFDIR) {
+					flag=1;
+				}
+				if ((sb.st_mode & S_IFMT) == S_IFREG) {
+					flag=2;
+				}
+				if ((flag == 1 || flag == 2) && strcmp(tokens[1], "-e") == 0 && strcmp(tokens[3], "]") == 0) {
+					cout<<"(True)"<<endl;
+					return 1;
+				}
+				if (flag == 1 && strcmp(tokens[1], "-d") == 0 && strcmp(tokens[3], "]") == 0) {	
+					cout<<"(True)"<<endl;
+					return 1;
+				}
+				if (flag == 2 && strcmp(tokens[1], "-f") == 0 && strcmp(tokens[3], "]") == 0) {
+					cout<<"(True)"<<endl;
+					return 1;
+				}
+				cout<<"(False)"<<endl;		
+				return 0;
+		}	
         //create pipe
         int fd[2];
         int result;
