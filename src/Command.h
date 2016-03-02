@@ -180,7 +180,7 @@ public:
         char* tcmdl;
         tcmdl = new char[strlen(cmdll)];
         strcpy(tcmdl, cmdll);
-        tcom = strtok(tcmdl, "|&;");
+        tcom = strtok(tcmdl, "|&;)(");
 //        cout<<"size of comms:"<<coms.size()<<endl;
         while (tcom != NULL) {
             SingleCom sc;
@@ -229,6 +229,14 @@ public:
                 string t = ";";
                 connectors.push_back(t);
             }
+            else if (*it == '(') {
+				string t="(";
+				connectors.push_back(t);
+            }
+            else if (*it == ')') {
+				string t=")";
+				connectors.push_back(t);
+            }
         }
     }
     /* Execute the command according to the connectors. 
@@ -239,18 +247,58 @@ public:
 //        cout<<"result of command 0:"<<result<<endl;
         if (result == -1) exit(0);
         unsigned int i = 0;
+        unsigned int j = 0;
+        int flag;
 //        cout<<"connectors.size()"<<connectors.size()<<endl;
         while (i < connectors.size()&&result!=-1) {
             if (connectors[i] == "||" && result == 1) {
                 i++;
+                j++;
+                if (connectors[i] == "(" ) {
+                	flag=1;
+					while (flag > 0) {
+						i++;
+						j++;
+						if ( connectors[i] == "(" ) { 
+							flag++;
+							j--;
+						}
+						if ( connectors[i] == ")" ) {
+							flag--;
+							j--;
+						}
+					}
+                }
             }
             else if (connectors[i] == "&&" && result == 0) {
                 i++;
+                j++;
+				if (connectors[i] == "(" ) {
+					flag=1;
+					while (flag > 0) {
+						i++;
+						j++;
+						if ( connectors[i] == "(" ) {
+							flag++;
+							j--;
+						}
+						if ( connectors[i] == ")" ) {
+							flag--;
+							j--;
+						}
+					}
+				}
+
+            }
+            else if (connectors[i] == "(" || connectors[i] == ")") {
+				i++;
+				while (connectors[i] == "(" || connectors[i] == ")") i++;
             }
             else {
                 ++i;
+                j++;
 //                result = 1;
-                result = coms[i].execute();
+                result = coms[j].execute();
 //                cout<<"result of command "<<i<<":"<<result<<endl;
             }
             if (result == -1) break;
@@ -261,19 +309,64 @@ public:
 };
 /*
 class PreCom: public Command {
+protected:
+	char cmdl[1000];
 public:
 	void clear () {
 	}
 
 	void setCmd (char* s){
+		strcpy(cmdl,s);
 	}
 	
 	void parse () {
-
+    // Delete the comment from command line                                                                                                                                     
+	    char* tmp;
+		tmp = strchr(cmdl, '#');
+		char *cmdll;
+		if (tmp != NULL) {
+			cmdll = new char[strlen(cmdl) - strlen(tmp)];
+			strncpy(cmdll, cmdl, strlen(cmdl) - strlen(tmp));
+		}
+		else
+		{
+			cmdll = new char[strlen(cmdl)];
+			strcpy(cmdll,cmdl);
+		}
+		string scmd(cmdll);
+		string::iterator it;
+		char cmd[1000];
+		while (i<scmd.size()) {
+			if (scmd[i] == '(') {
+				j=i-1;
+				while (j > 0 && scmd[j] != '|' && scmd[j] != '&') {
+					j--;
+				}
+				if (j > 0) {
+					string con;,
+					con[0]=scmd[j];
+					con[1]=scmd[j-1];
+					con[2]=0;
+					connectors.push_back(con);
+					con=scmd.substr(
+				}
+			}
+			if (*it == ')') {
+				cmds.push_back(cmd);
+				cmd[0]=0;
+				flag=1;
+			}
+			if (flag && (*it == '|' || *it == '&')) {
+				it++;
+				char con[5];
+				
+			}
+		}
 	}
 
 	int execute () {
 	}
 };
 */
+
 #endif
