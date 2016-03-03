@@ -48,11 +48,11 @@ public:
     //parse single command into tokens
     void parse() {
         count = 0;
-        char *token = strtok(cmd, " ");
+        char *token = strtok(cmd, " ()");
         while (token != NULL) {
             tokens[count] = new char[strlen(token)];
             strcpy(tokens[count], token);
-            token = strtok(NULL, " ");
+            token = strtok(NULL, " ()");
             count++;
         }
         tokens[count] = 0;
@@ -180,7 +180,7 @@ public:
         char* tcmdl;
         tcmdl = new char[strlen(cmdll)];
         strcpy(tcmdl, cmdll);
-        tcom = strtok(tcmdl, "|&;)(");
+        tcom = strtok(tcmdl, "|&;");
 //        cout<<"size of comms:"<<coms.size()<<endl;
         while (tcom != NULL) {
             SingleCom sc;
