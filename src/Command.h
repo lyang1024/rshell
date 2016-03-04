@@ -27,12 +27,11 @@ class SingleCom: public Command {
 protected:
     char cmd[100];
     char *tokens[64];
-    int flag;
     int count;
     
 public:
     void clear() {
-        memset(tokens, 0, sizeof(tokens));
+        memset(tokens, 0, 64*sizeof(tokens));
         memset(cmd, 0, sizeof(cmd));
     }
    /* put the single command into SingleCom class*/
