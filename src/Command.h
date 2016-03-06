@@ -171,10 +171,10 @@ class SingleCom: public Command {
             if (readbuffer == 0) return 0;
             else return 1;
         }
-        for (unsigned int m = tokens.size() - 1;m >= 0;--m) {
+        for (unsigned int m = tokens.size() - 1;m >= 1;--m) {
             delete [] ctokens[m];
         }
-
+		delete [] ctokens[0];
     }
 };
 
@@ -204,7 +204,7 @@ class MultiCom: public Command {
     void parse() {
         //remove comment
         std::string comment("#");
-        unsigned int com_pos = commandline.find(comment);
+        size_t com_pos = commandline.find(comment);
         string cmdline;
         if (com_pos != std::string::npos) {
             cmdline = commandline.substr(0,com_pos);
@@ -268,7 +268,7 @@ class MultiCom: public Command {
     }
     //execute
     int execute() {
-        this->print();
+//        this->print();
         int result = coms[0].execute();
         unsigned int i = 0;
         unsigned int j = 0;
@@ -304,11 +304,11 @@ class MultiCom: public Command {
                 }
             }
             else if ((connectors[i] == "(" || connectors[i] == ")") && i < connectors.size()) {
-                cout<<"meet ( or )"<<endl;
+ //               cout<<"meet ( or )"<<endl;
                 ++i;
-                cout<<"before loop"<<endl;
+//             cout<<"before loop"<<endl;
                 while (i < connectors.size() && (connectors[i] == "(" || connectors[i] == ")")) ++i;
-                cout<<"after add i = "<<i<<endl;
+//                cout<<"after add i = "<<i<<endl;
             }
             else {
                 if (i < connectors.size())
@@ -316,15 +316,15 @@ class MultiCom: public Command {
                 if (j < coms.size()) {
                     ++j;
                     result = coms[j].execute();
-                    cout<<"after this execute"<<endl;
-                    cout<<"i = "<<i<<", j = "<<j<<endl;
+//                    cout<<"after this execute"<<endl;
+//                    cout<<"i = "<<i<<", j = "<<j<<endl;
                 }
             }
             if (result == -1) break;
-            cout<<"current i:"<<i<<endl;
-            cout<<"connectors size:"<<connectors.size()<<endl;
+//            cout<<"current i:"<<i<<endl;
+//            cout<<"connectors size:"<<connectors.size()<<endl;
         }
-        cout<<"out of the loop"<<endl;
+//        cout<<"out of the loop"<<endl;
         if (result == -1) return -1;
         else return 1;
     }
