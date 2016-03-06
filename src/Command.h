@@ -1,129 +1,161 @@
-#ifndef sshell_Command_h
-#define sshell_Command_h
+#ifndef rshell_Command_h
+#define rshell_Command_h
 #include<stdio.h>
 #include<sys/types.h>
 #include<sys/wait.h>
 #include<sys/stat.h>
 #include<unistd.h>
-#include<string.h>
-#include<vector>
 #include<string>
+#include<vector>
+#include<cstring>
+#include<sstream>
 #include<stdlib.h>
 #include<iostream>
 using namespace std;
 
-/* Base class */
+//Base class
 class Command {
-    
-public:
+
+    public:
+    Command(){};
     virtual void parse() = 0;
     virtual int execute() = 0;
-    virtual void clear() = 0;
-    virtual void setCmd(char *s) = 0;
+    virtual void print() = 0;
+//    virtual void clear() = 0;
+    virtual void setCmd(string s) = 0;
 };
 
-/* Single command class*/
+//single command class
 class SingleCom: public Command {
-protected:
-    char cmd[100];
-    char *tokens[64];
-    int count;
-    
-public:
-    void clear() {
-        memset(tokens, 0, 64*sizeof(tokens));
-        memset(cmd, 0, sizeof(cmd));
-    }
-   /* put the single command into SingleCom class*/
-    void setCmd(char *s) {
-        strcpy(cmd, s);
-    }
-    
-//    void print() {
-//        for (unsigned int j = 0;tokens[j] != 0;++j) {
-//            printf("%s\n",tokens[j]);
-//        }
+    protected:
+    std::string cmd;
+    std::vector<string> tokens;
+
+    public:
+    SingleCom() : Command(){};
+//    void clear() {
 //    }
-    //parse single command into tokens
+//
+    void setCmd(string s) {
+        cmd = s;
+    }
+
+    void print() {
+        cout<<cmd<<endl;
+    }
     void parse() {
-        count = 0;
-        char *token = strtok(cmd, " ()");
-        while (token != NULL) {
-            tokens[count] = new char[strlen(token)];
-            strcpy(tokens[count], token);
-            token = strtok(NULL, " ()");
-            count++;
+        //delete () from command string
+        while(true) {
+            std::string::iterator it = cmd.begin();
+            for (;it != cmd.end(); ++it) {
+                if (*it == '(' || *it == ')') {
+                    cmd.erase(it);
+                    break;
+                }
+            }
+            if (it == cmd.end()) break;
         }
-        tokens[count] = 0;
-        delete[] token;
-        token = NULL;
+        char *cmdc = new char[cmd.length() + 1];
+        strcpy(cmdc, cmd.c_str());
+        char *token = strtok(cmdc, " ");
+        while (token != NULL) {
+            std::string tmps(token);
+            tokens.push_back(tmps);
+            token = strtok(NULL, " ");
+        }
+        delete [] cmdc;
         return;
     }
-    //execute the single command
+
     int execute() {
         pid_t pid;
-//        flag = 1;      // identify that the command execute successfully(=1) or not(=0)
         int status;
-        char stre[10];
-        strcpy(stre, "exit");
+        if (tokens.size() != 0 && tokens.at(0) == "exit") return -1;
+        else if (tokens.size() == 0) {
+            cout<<"empty command!"<<endl;
+            return 0;
+        }
+        //convert string to char
+        char *ctokens[100];
+        unsigned int n = 0;
+        for (;n < tokens.size();++n) {
+            string ttmp = tokens.at(n);
+            ctokens[n] = new char[ttmp.length() + 1];
+            strcpy(ctokens[n],ttmp.c_str());
+        }
+        ctokens[n] = NULL;
+        int flag = 0;
+        if (tokens.at(0) == "test" || tokens.at(0) == "[") {
+            if ((tokens.at(0) == "[" && tokens.size() == 4) || (tokens.at(0) == "test" && tokens.size() == 3)) {
+                //string tmpts = tokens.at(2);
+                //char *tmptc = new char[tmpts.length() + 1];
+                //strcpy(tmptc,tmpts.c_str());
+                struct stat sb;
+                if (stat(ctokens[2], &sb) == -1) {
+                    cout<<"(False)"<<endl;
+                    return 0;
+                }
+                else {
+                    if (S_ISDIR(sb.st_mode)) flag = 1;
+                    else if (S_ISREG(sb.st_mode)) flag = 2;
 
-	    // If single command is "exit" then exit 
-        if (strcmp(tokens[0], stre) == 0 && count == 1) return -1;
-		// for test commmand
-        int flag=0;
-		if (strcmp(tokens[0],"test") == 0 || strcmp(tokens[0], "[") == 0) {
-				if (strcmp(tokens[0], "[") == 0 && (tokens[3] == NULL || strcmp(tokens[3], "]" ) != 0)) {
-					cout<<"Wrong test command!"<<endl;
-					return 0;
-				}
-				struct stat sb;
-				if (stat(tokens[2], &sb) == -1) {
-					cout<<"(False)"<<endl;
-					return 0;
-				}
-				if ((sb.st_mode & S_IFMT) == S_IFDIR) {
-					flag=1;
-				}
-				if ((sb.st_mode & S_IFMT) == S_IFREG) {
-					flag=2;
-				}
-				if ((flag == 1 || flag == 2) && strcmp(tokens[1], "-e") == 0) {
-					cout<<"(True)"<<endl;
-					return 1;
-				}
-				if (flag == 1 && strcmp(tokens[1], "-d") == 0) {	
-					cout<<"(True)"<<endl;
-					return 1;
-				}
-				if (flag == 2 && strcmp(tokens[1], "-f") == 0) {
-					cout<<"(True)"<<endl;
-					return 1;
-				}
-				cout<<"(False)"<<endl;		
-				return 0;
-		}	
-        //create pipe
+                    if (flag == 1) {
+                        if (tokens.at(1) == "-e" || tokens.at(1) == "-d") {
+                            cout<<"(True)"<<endl;
+                            return 1;
+                        }
+                    }
+                    else if (flag == 2) {
+                        if (tokens.at(1) == "-e" || tokens.at(1) == "-f") {
+                            cout<<"(Ture)"<<endl;
+                            return 1;
+                        }
+                    }
+                    cout<<"(False)"<<endl;
+                    return 0;
+                }
+                //delete [] tmptc;
+            }
+            else if ((tokens.at(0) == "[" && tokens.size() == 3) || (tokens.at(0) == "test" && tokens.size() == 2)) {
+                //string tmpts = tokens.at(1);
+                //char *tmptc = new char[tmpts.length() + 1];
+                //strcpy(tmptc,tmpts.c_str());
+                struct stat sb;
+                if (stat(ctokens[1], &sb) == -1) {
+                    cout<<"(False)"<<endl;
+                    return 0;
+                }
+                else {
+                    if (S_ISDIR(sb.st_mode) || S_ISREG(sb.st_mode)) {
+                        cout<<"(True)"<<endl;
+                        return 1;
+                    }
+                    else {
+                        cout<<"(False)"<<endl;
+                        return 0;
+                    }
+                }
+            }
+        }
         int fd[2];
         int result;
-        int readbuffer;
+        int readbuffer = 1;
         int message = 1;
-        result = pipe(fd);       
+        result = pipe(fd);
         if (result < 0) {
             perror("ERROR: Pipe error\n");
             return 0;
         }
 
-	    // Execute the single command
+        //Execute using child process
         pid = fork();
-
-	    if (pid < 0) {
+        if (pid <0 ) {
             perror("ERROR: Forking child process failure\n");
-            //exit(EXIT_FAILURE);
-            return 0;
+            exit(EXIT_FAILURE);
         }
         else if (pid == 0) {
-            execvp(tokens[0], tokens);
-            perror("ERROR:Execution failure\n");
+            execvp(ctokens[0], ctokens);
+            perror("ERROR: Execution failure\n");
             //close the input side of pipe and send execution message
             close(fd[0]);
             message = 0;
@@ -131,241 +163,170 @@ public:
             exit(EXIT_FAILURE);
         }
         else {
+            //parent process
             //close output side of pipe and read in a string
             close(fd[1]);
             while (wait(&status) != pid);
             read(fd[0], &readbuffer, sizeof(readbuffer));
             if (readbuffer == 0) return 0;
-            return 1;
+            else return 1;
         }
-//        return flag;
+        for (unsigned int m = tokens.size() - 1;m >= 0;--m) {
+            delete [] ctokens[m];
+        }
+
     }
 };
 
-/* Multi-command class with connectors */
+//multi-command class
 class MultiCom: public Command {
-private:
-    vector<SingleCom> coms;   // Store every single command tokenized by "||", "&&", ";"
-    vector<string> connectors; // Store every connector corresponding to each single command 
-    char cmdl[1000];   // Store the multi-command line;
-    
-public:
-    
-    void clear() {
-        memset(cmdl, 0, sizeof(cmdl));
-        coms.clear();
-        connectors.clear();
-    }
+    private:
+    vector<SingleCom> coms;
+    vector<string> connectors;
+    std::string commandline;
 
-    void setCmd(char *s) {
-        strcpy(cmdl, s);
+    public:
+    MultiCom() : Command() {};
+    void setCmd(string s) {
+        commandline = s;
     }
-// Tokenize the multi-command line into single commmands by connectors "||", "&&" and ";"
+    void print()
+    {
+        cout<<"commands:"<<endl;
+        for (unsigned int p = 0;p < coms.size();++p) {
+            coms.at(p).print();
+        }
+        cout<<"connectors:"<<endl;
+        for (unsigned int q = 0;q < connectors.size();++q) {
+            cout<<connectors.at(q)<<endl;
+        }
+    }
     void parse() {
-        // Delete the comment from command line 
-        char* tmp;
-        tmp = strchr(cmdl, '#');
-        char *cmdll;
-        if (tmp != NULL) {
-            cmdll = new char[strlen(cmdl) - strlen(tmp)];
-            strncpy(cmdll, cmdl, strlen(cmdl) - strlen(tmp));
+        //remove comment
+        std::string comment("#");
+        unsigned int com_pos = commandline.find(comment);
+        string cmdline;
+        if (com_pos != std::string::npos) {
+            cmdline = commandline.substr(0,com_pos);
         }
         else {
-            cmdll = new char[strlen(cmdl)];
-            strcpy(cmdll, cmdl);
-        }
-	// Tokenize the command line into single commands sequentially
-        char *tcom;
-        char* tcmdl;
-        tcmdl = new char[strlen(cmdll)];
-        strcpy(tcmdl, cmdll);
-        tcom = strtok(tcmdl, "|&;");
-//        cout<<"size of comms:"<<coms.size()<<endl;
-        while (tcom != NULL) {
-            SingleCom sc;
-            sc.clear();
-            sc.setCmd(tcom);
-            coms.push_back(sc);
-            tcom = strtok(NULL, "|&;");
-        }
-        // Parse each single command
-        for (unsigned int i=0; i<coms.size(); i++) {
-            coms[i].parse();
-//            coms[i].print();
+            cmdline = commandline;
         }
         
-        //Find all the  connectors and store in the connectors vector sequentially
-        string scmd(cmdll);
-        string::iterator it;
-        for (it = scmd.begin(); it != scmd.end(); it++) {
-           // Identify connector "||" 
-	   if (*it == '|') {
+        //break into single commands
+        char *cmdlinec;
+        char *cmdtoken;
+        cmdlinec = new char[cmdline.size()];
+        strcpy(cmdlinec,cmdline.c_str());
+        cmdtoken = strtok(cmdlinec,"|&;");
+        while (cmdtoken != NULL) {
+            std::string tmptoken(cmdtoken);
+            SingleCom sc;
+            sc.setCmd(tmptoken);
+            coms.push_back(sc);
+            cmdtoken = strtok(NULL, "|&;");
+        }
+        //parse each single command
+        for (unsigned int i = 0; i<coms.size(); i++) {
+            coms[i].parse();
+        }
+        //find connectors
+        for (string::iterator it = cmdline.begin(); it != cmdline.end(); ++it) {
+            if (*it == '|') {
                 ++it;
-                if(*it == '|') {
-                    string t = "||";
-                    connectors.push_back(t);
+                if (*it == '|') {
+                    string tmpcon = "||";
+                    connectors.push_back(tmpcon);
                 }
                 else {
-                    printf("Wrong input format!\n");
+                    cout<<"wrong input format!"<<endl;
                     return;
                 }
             }
-	   // Identify connector "&&"
+            //&&
             else if (*it == '&') {
                 ++it;
-                if(*it =='&') {
-                    string t = "&&";
-                    connectors.push_back(t);
-                    
+                if (*it == '&') {
+                    string tmpcon = "&&";
+                    connectors.push_back(tmpcon);
                 }
                 else {
-                    printf("Wrong input format!\n");
+                    cout<<"wrong input format!"<<endl;
                     return;
                 }
             }
-            // Identify connector ";"
-            else if (*it == ';') {
-                string t = ";";
-                connectors.push_back(t);
-            }
-            else if (*it == '(') {
-				string t="(";
-				connectors.push_back(t);
-            }
-            else if (*it == ')') {
-				string t=")";
-				connectors.push_back(t);
+            //;
+            else if (*it == ';' || *it == '(' || *it == ')') {
+                string tmpcon;
+                stringstream ss;
+                ss << *it;
+                ss >> tmpcon;
+                connectors.push_back(tmpcon);
             }
         }
+        delete [] cmdlinec;
     }
-    /* Execute the command according to the connectors. 
-  Each single command follows a connector except the first one.*/
+    //execute
     int execute() {
-        int result;    // Store the status of the execution of a single command  0 = fail, 1 = succeed -1 = exit
-        result = coms[0].execute();
-//        cout<<"result of command 0:"<<result<<endl;
-        if (result == -1) exit(0);
+        this->print();
+        int result = coms[0].execute();
         unsigned int i = 0;
         unsigned int j = 0;
-        int flag;
-//        cout<<"connectors.size()"<<connectors.size()<<endl;
-        while (i < connectors.size()&&result!=-1) {
-            if (connectors[i] == "||" && result == 1) {
-                i++;
-                j++;
-                if (connectors[i] == "(" ) {
-                	flag=1;
-					while (flag > 0) {
-						i++;
-						j++;
-						if ( connectors[i] == "(" ) { 
-							flag++;
-							j--;
-						}
-						if ( connectors[i] == ")" ) {
-							flag--;
-							j--;
-						}
-					}
+        int count; //count the number of pair of brackets
+        //int pair;
+        while (i < connectors.size() && result != -1 && j < coms.size()) {
+            if ((connectors[i] == "||" && result == 1) || (connectors[i] == "&&" && result == 0)) {
+                ++i;
+                if (i == connectors.size()) break;
+                if (connectors[i] == "(") {
+                    count = 1;
+                    //pair = 0;
+                    ++i;
+                    //++j; //the number of connectors could be larger than commands now
+                    while (count > 0 && i < connectors.size()) {
+                        if (connectors[i] == "(") {
+                            ++count;
+                        }
+                        else if (connectors[i] == ")") {
+                            --count;
+                            //++pair;
+                        }
+                        else {
+                            if( j < coms.size())
+                                ++j;
+                        }
+                        ++i; // in the last loop, i points at a new unanalyzed connector
+                    }
+                    //++j; //if not add, j points to the last command in the bracket
+                }
+                else {
+                    ++j;
                 }
             }
-            else if (connectors[i] == "&&" && result == 0) {
-                i++;
-                j++;
-				if (connectors[i] == "(" ) {
-					flag=1;
-					while (flag > 0) {
-						i++;
-						j++;
-						if ( connectors[i] == "(" ) {
-							flag++;
-							j--;
-						}
-						if ( connectors[i] == ")" ) {
-							flag--;
-							j--;
-						}
-					}
-				}
-
-            }
-            else if (connectors[i] == "(" || connectors[i] == ")") {
-				i++;
-				while (connectors[i] == "(" || connectors[i] == ")") i++;
+            else if ((connectors[i] == "(" || connectors[i] == ")") && i < connectors.size()) {
+                cout<<"meet ( or )"<<endl;
+                ++i;
+                cout<<"before loop"<<endl;
+                while (i < connectors.size() && (connectors[i] == "(" || connectors[i] == ")")) ++i;
+                cout<<"after add i = "<<i<<endl;
             }
             else {
-                ++i;
-                j++;
-//                result = 1;
-                result = coms[j].execute();
-//                cout<<"result of command "<<i<<":"<<result<<endl;
+                if (i < connectors.size())
+                    ++i;
+                if (j < coms.size()) {
+                    ++j;
+                    result = coms[j].execute();
+                    cout<<"after this execute"<<endl;
+                    cout<<"i = "<<i<<", j = "<<j<<endl;
+                }
             }
             if (result == -1) break;
+            cout<<"current i:"<<i<<endl;
+            cout<<"connectors size:"<<connectors.size()<<endl;
         }
+        cout<<"out of the loop"<<endl;
         if (result == -1) return -1;
-        return 1;
+        else return 1;
     }
 };
-/*
-class PreCom: public Command {
-protected:
-	char cmdl[1000];
-public:
-	void clear () {
-	}
-
-	void setCmd (char* s){
-		strcpy(cmdl,s);
-	}
-	
-	void parse () {
-    // Delete the comment from command line                                                                                                                                     
-	    char* tmp;
-		tmp = strchr(cmdl, '#');
-		char *cmdll;
-		if (tmp != NULL) {
-			cmdll = new char[strlen(cmdl) - strlen(tmp)];
-			strncpy(cmdll, cmdl, strlen(cmdl) - strlen(tmp));
-		}
-		else
-		{
-			cmdll = new char[strlen(cmdl)];
-			strcpy(cmdll,cmdl);
-		}
-		string scmd(cmdll);
-		string::iterator it;
-		char cmd[1000];
-		while (i<scmd.size()) {
-			if (scmd[i] == '(') {
-				j=i-1;
-				while (j > 0 && scmd[j] != '|' && scmd[j] != '&') {
-					j--;
-				}
-				if (j > 0) {
-					string con;,
-					con[0]=scmd[j];
-					con[1]=scmd[j-1];
-					con[2]=0;
-					connectors.push_back(con);
-					con=scmd.substr(
-				}
-			}
-			if (*it == ')') {
-				cmds.push_back(cmd);
-				cmd[0]=0;
-				flag=1;
-			}
-			if (flag && (*it == '|' || *it == '&')) {
-				it++;
-				char con[5];
-				
-			}
-		}
-	}
-
-	int execute () {
-	}
-};
-*/
-
 #endif

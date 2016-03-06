@@ -23,14 +23,14 @@ int main()
         prompt();                // Print prompt
         getline(cin,input);         // Read command line
         if (input == "") continue;
-        char *tmps;
-        tmps = new char[sizeof(input)]; 
-        strcpy(tmps, input.c_str()); 
-        line.setCmd(tmps);          // Put command line into line
+//        char *tmps;
+//        tmps = new char[sizeof(input)]; 
+//        strcpy(tmps, input.c_str()); 
+        line.setCmd(input);          // Put command line into line
         line.parse();            // Parse the command line
         eflag = line.execute();       // Execute the command line with connectors
         if (eflag == -1) break;
-        line.clear();
+//        line.clear();
     }
     return 0;
 }
