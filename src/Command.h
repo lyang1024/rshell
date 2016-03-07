@@ -70,7 +70,7 @@ class SingleCom: public Command {
     int execute() {
         pid_t pid;
         int status;
-        if (tokens.size() != 0 && tokens.at(0) == "exit") return -1;
+        if (tokens.size() == 1 && tokens.at(0) == "exit") return -1;
         else if (tokens.size() == 0) {
             cout<<"empty command!"<<endl;
             return 0;
@@ -93,7 +93,7 @@ class SingleCom: public Command {
                 struct stat sb;
                 if (stat(ctokens[2], &sb) == -1) {
                     cout<<"(False)"<<endl;
-                    return 0;
+                    return 1;
                 }
                 else {
                     if (S_ISDIR(sb.st_mode)) flag = 1;
@@ -112,7 +112,7 @@ class SingleCom: public Command {
                         }
                     }
                     cout<<"(False)"<<endl;
-                    return 0;
+                    return 1;
                 }
                 //delete [] tmptc;
             }
@@ -123,7 +123,7 @@ class SingleCom: public Command {
                 struct stat sb;
                 if (stat(ctokens[1], &sb) == -1) {
                     cout<<"(False)"<<endl;
-                    return 0;
+                    return 1;
                 }
                 else {
                     if (S_ISDIR(sb.st_mode) || S_ISREG(sb.st_mode)) {
@@ -132,7 +132,7 @@ class SingleCom: public Command {
                     }
                     else {
                         cout<<"(False)"<<endl;
-                        return 0;
+                        return 1;
                     }
                 }
             }
@@ -277,14 +277,16 @@ class MultiCom: public Command {
         while (i < connectors.size() && result != -1 && j < coms.size()) {
             if ((connectors[i] == "||" && result == 1) || (connectors[i] == "&&" && result == 0)) {
                 ++i;
+                ++j;
                 if (i == connectors.size()) break;
                 if (connectors[i] == "(") {
                     count = 1;
                     //pair = 0;
-                    ++i;
+                   // ++i;
                     //++j; //the number of connectors could be larger than commands now
                     while (count > 0 && i < connectors.size()) {
-                        if (connectors[i] == "(") {
+						i++;
+						if (connectors[i] == "(") {
                             ++count;
                         }
                         else if (connectors[i] == ")") {
@@ -295,12 +297,9 @@ class MultiCom: public Command {
                             if( j < coms.size())
                                 ++j;
                         }
-                        ++i; // in the last loop, i points at a new unanalyzed connector
+                       // ++i; // in the last loop, i points at a new unanalyzed connector
                     }
                     //++j; //if not add, j points to the last command in the bracket
-                }
-                else {
-                    ++j;
                 }
             }
             else if ((connectors[i] == "(" || connectors[i] == ")") && i < connectors.size()) {
