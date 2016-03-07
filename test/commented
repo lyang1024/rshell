@@ -1,0 +1,3 @@
+test -d src && [ -f src/Command.h ] # test -d src/Command.h && [ src/nosuchfile ]
+(echo A && echo B) || (echo C && echo D) # && (echo E && echo F)
+exit

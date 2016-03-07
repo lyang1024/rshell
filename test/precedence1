@@ -1,0 +1,5 @@
+(echo A && echo B) || (echo C && echo D)
+(echo A) && (echo B)
+(echo A || (echo B && echo C)) && (echo D || echo E && echo H) 
+(fail command1 || (fail command2 && (echo A || echo B))) || ([ -f src/Command.h ] && test -d src/Command.h)
+exit

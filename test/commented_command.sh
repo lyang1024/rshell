@@ -1,5 +1,3 @@
-#!/bin/sh
-echo "Testing command 1 : ls # show something"
-ls # show something
-echo "Testing command 2 : ls && cal # pwd; ls -a && echo hello world"
-ls && cal # pwd; ls -a && echo hello world
+echo "Command 1: test -d src && [ -f src/Command.h ] # test -d src/Command.h && [ src/nosuchfile ]                                                          
+Command 2: (echo A && echo B) || (echo C && echo D) # && (echo E && echo F)"
+bin/rshell < commented

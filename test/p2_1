@@ -1,2 +1,0 @@
-test src && test -e src && test -d src && test -f src || test -f src/Command.h  
-[ src ] && [ -e src ] && [ -d src ] && [ -f src ] || [ -f src/Command.h ]
