@@ -216,7 +216,7 @@ class MultiCom: public Command {
         //break into single commands
         char *cmdlinec;
         char *cmdtoken;
-        cmdlinec = new char[cmdline.size()];
+        cmdlinec = new char[cmdline.size()+1];
         strcpy(cmdlinec,cmdline.c_str());
         cmdtoken = strtok(cmdlinec,"|&;");
         while (cmdtoken != NULL) {
@@ -302,7 +302,7 @@ class MultiCom: public Command {
                     //++j; //if not add, j points to the last command in the bracket
                 }
             }
-            else if ((connectors[i] == "(" || connectors[i] == ")") && i < connectors.size()) {
+            else if (i < connectors.size() && (connectors[i] == "(" || connectors[i] == ")")) {
  //               cout<<"meet ( or )"<<endl;
                 ++i;
 //             cout<<"before loop"<<endl;
