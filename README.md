@@ -37,6 +37,13 @@ When a command fails, rshell will return an error message using perror and conti
 
 ##Testing Method
 
+1) Testing method for test folder:
+1. Include test cases of different type of commands in seperate bash file.
+2. All test files are in the "test" directory.
+3. Run "bin/rshell" first then test the bash files. E.g. Type in "./test/single_command.sh" after starting rshell to test commands included in this file.
+4. Special case: the bash file "exit.sh" needs to be run outside rshell environment. E.g. "./test/exit.sh"
+
+2) Testing method for tests folder:
 1. include test cases of different type of commands in seperate bash file.
 2. All test files are in the "tests" directory.
 3. Run test files outside rshell environment. E.g. "./tests/test_test.sh"
