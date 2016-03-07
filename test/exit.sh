@@ -1,6 +1,6 @@
 echo "Test command 1 : exit"
-../bin/rshell < exitcmd
+bin/rshell < ./test/exitcmd
 echo "Test command 2 : test exit && [ exit ] && exit "
-../bin/rshell < exitcmd3
+bin/rshell < ./test/exitcmd3
 echo "Test command 3 : (echo A && echo B) || (echo C && exit) && exit"
-../bin/rshell < exitcmd4
+bin/rshell < ./test/exitcmd4
