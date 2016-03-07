@@ -18,8 +18,12 @@ class Command {
 
     public:
     Command(){};
+    //parse single commands into tokens
+    //or break down the whole command line
     virtual void parse() = 0;
+    //execute
     virtual int execute() = 0;
+    //mainly used for debugging
     virtual void print() = 0;
 //    virtual void clear() = 0;
     virtual void setCmd(string s) = 0;
@@ -29,7 +33,7 @@ class Command {
 class SingleCom: public Command {
     protected:
     std::string cmd;
-    std::vector<string> tokens;
+    std::vector<string> tokens; //store tokens of a single command
 
     public:
     SingleCom() : Command(){};
@@ -39,13 +43,14 @@ class SingleCom: public Command {
     void setCmd(string s) {
         cmd = s;
     }
-
+    //mainly used for debugging
     void print() {
         cout<<cmd<<endl;
     }
     void parse() {
         //delete () from command string
         while(true) {
+            //remove () in a single command
             std::string::iterator it = cmd.begin();
             for (;it != cmd.end(); ++it) {
                 if (*it == '(' || *it == ')') {
@@ -55,6 +60,7 @@ class SingleCom: public Command {
             }
             if (it == cmd.end()) break;
         }
+        //tokenize single command and push in "tokens"
         char *cmdc = new char[cmd.length() + 1];
         strcpy(cmdc, cmd.c_str());
         char *token = strtok(cmdc, " ");
@@ -70,6 +76,7 @@ class SingleCom: public Command {
     int execute() {
         pid_t pid;
         int status;
+        //exit if exit
         if (tokens.size() == 1 && tokens.at(0) == "exit") return -1;
         else if (tokens.size() == 0) {
             cout<<"empty command!"<<endl;
@@ -85,11 +92,10 @@ class SingleCom: public Command {
         }
         ctokens[n] = NULL;
         int flag = 0;
+        //if is test, execute
         if (tokens.at(0) == "test" || tokens.at(0) == "[") {
+            //when there are flag
             if ((tokens.at(0) == "[" && tokens.size() == 4) || (tokens.at(0) == "test" && tokens.size() == 3)) {
-                //string tmpts = tokens.at(2);
-                //char *tmptc = new char[tmpts.length() + 1];
-                //strcpy(tmptc,tmpts.c_str());
                 struct stat sb;
                 if (stat(ctokens[2], &sb) == -1) {
                     cout<<"(False)"<<endl;
@@ -116,10 +122,8 @@ class SingleCom: public Command {
                 }
                 //delete [] tmptc;
             }
+            //when there are no flag
             else if ((tokens.at(0) == "[" && tokens.size() == 3) || (tokens.at(0) == "test" && tokens.size() == 2)) {
-                //string tmpts = tokens.at(1);
-                //char *tmptc = new char[tmpts.length() + 1];
-                //strcpy(tmptc,tmpts.c_str());
                 struct stat sb;
                 if (stat(ctokens[1], &sb) == -1) {
                     cout<<"(False)"<<endl;
@@ -137,9 +141,13 @@ class SingleCom: public Command {
                 }
             }
         }
+        //if not test command, use execvp and use pipe to pass execution result of child process
         int fd[2];
+        //execution result
         int result;
         int readbuffer = 1;
+        //store execution result of child process
+        //pass to parent using pipe
         int message = 1;
         result = pipe(fd);
         if (result < 0) {
@@ -168,9 +176,11 @@ class SingleCom: public Command {
             close(fd[1]);
             while (wait(&status) != pid);
             read(fd[0], &readbuffer, sizeof(readbuffer));
+            //success 1, failure 0
             if (readbuffer == 0) return 0;
             else return 1;
         }
+        //free memory
         for (unsigned int m = tokens.size() - 1;m >= 1;--m) {
             delete [] ctokens[m];
         }
@@ -181,8 +191,8 @@ class SingleCom: public Command {
 //multi-command class
 class MultiCom: public Command {
     private:
-    vector<SingleCom> coms;
-    vector<string> connectors;
+    vector<SingleCom> coms; //store single commands
+    vector<string> connectors; //store connectors (including ())
     std::string commandline;
 
     public:
@@ -190,6 +200,7 @@ class MultiCom: public Command {
     void setCmd(string s) {
         commandline = s;
     }
+    //mainly used for debugging
     void print()
     {
         cout<<"commands:"<<endl;
@@ -206,6 +217,7 @@ class MultiCom: public Command {
         std::string comment("#");
         size_t com_pos = commandline.find(comment);
         string cmdline;
+        //truncate command line if there is comment symbol
         if (com_pos != std::string::npos) {
             cmdline = commandline.substr(0,com_pos);
         }
@@ -213,7 +225,7 @@ class MultiCom: public Command {
             cmdline = commandline;
         }
         
-        //break into single commands
+        //convert to cstring first and break into single commands
         char *cmdlinec;
         char *cmdtoken;
         cmdlinec = new char[cmdline.size()+1];
@@ -223,7 +235,7 @@ class MultiCom: public Command {
             std::string tmptoken(cmdtoken);
             SingleCom sc;
             sc.setCmd(tmptoken);
-            coms.push_back(sc);
+            coms.push_back(sc); //push in a single command
             cmdtoken = strtok(NULL, "|&;");
         }
         //parse each single command
@@ -258,6 +270,7 @@ class MultiCom: public Command {
             //;
             else if (*it == ';' || *it == '(' || *it == ')') {
                 string tmpcon;
+                //convert char to string
                 stringstream ss;
                 ss << *it;
                 ss >> tmpcon;
@@ -273,16 +286,14 @@ class MultiCom: public Command {
         unsigned int i = 0;
         unsigned int j = 0;
         int count; //count the number of pair of brackets
-        //int pair;
         while (i < connectors.size() && result != -1 && j < coms.size()) {
+            //when the next block should be skipped
             if ((connectors[i] == "||" && result == 1) || (connectors[i] == "&&" && result == 0)) {
                 ++i;
                 ++j;
                 if (i == connectors.size()) break;
                 if (connectors[i] == "(") {
                     count = 1;
-                    //pair = 0;
-                   // ++i;
                     //++j; //the number of connectors could be larger than commands now
                     while (count > 0 && i < connectors.size()) {
 						i++;
@@ -291,7 +302,6 @@ class MultiCom: public Command {
                         }
                         else if (connectors[i] == ")") {
                             --count;
-                            //++pair;
                         }
                         else {
                             if( j < coms.size())
@@ -302,6 +312,7 @@ class MultiCom: public Command {
                     //++j; //if not add, j points to the last command in the bracket
                 }
             }
+            //when encountering (),increment index i for connectors untill get out of ()s
             else if (i < connectors.size() && (connectors[i] == "(" || connectors[i] == ")")) {
  //               cout<<"meet ( or )"<<endl;
                 ++i;
@@ -309,6 +320,7 @@ class MultiCom: public Command {
                 while (i < connectors.size() && (connectors[i] == "(" || connectors[i] == ")")) ++i;
 //                cout<<"after add i = "<<i<<endl;
             }
+            //otherwise
             else {
                 if (i < connectors.size())
                     ++i;
